@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+	<link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/themes/light/main.css">
+	<script src="https://js.arcgis.com/4.15/"></script>
+    <title>Webgis-CUG未来城</title>
+    <style>
+      html, body, #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+
+
+    <div id="viewDiv"></div>
+
+  </body>
+  <script>
+    //定义搜索控件，点要素渲染器
+	var searchWidget,pointRenderer;
+
+    require([
+		"esri/Map",
+        "esri/views/MapView",
+		"esri/layers/GeoJSONLayer",
+		"esri/widgets/Search",
+		], function(Map, MapView, GeoJSONLayer, Search) {
+  
+		var map = new Map({
+			basemap: "osm"
+		});
+  
+		var view = new MapView({
+			container: "viewDiv",
+			map: map,
+			center: [114.613, 30.460],
+			zoom: 16
+		});
+
+		//定义一个popup（点）
+		var template = {
+			// autocasts as new PopupTemplate()
+			title: "中国地质大学-{name}",
+			content: [{
+				// It is also possible to set the fieldInfos outside of the content
+				// directly in the popupTemplate. If no fieldInfos is specifically set
+				// in the content, it defaults to whatever may be set within the popupTemplate.
+				type: "fields",
+				fieldInfos: [{
+						fieldName: "name",
+						label: "地点",
+						format: {
+							digitSeparator: true,
+							places: 0
+						}
+					},
+				]
+			}]
+		};
+		//定义一个popup（面）
+		var template_2 = {
+			// autocasts as new PopupTemplate()
+			title: "中国地质大学-{name}",
+			content: [{
+				// It is also possible to set the fieldInfos outside of the content
+				// directly in the popupTemplate. If no fieldInfos is specifically set
+				// in the content, it defaults to whatever may be set within the popupTemplate.
+				type: "fields",
+				fieldInfos: [{
+						fieldName: "name",
+						label: "地点",
+						format: {
+							digitSeparator: true,
+							places: 0
+						}
+					},
+				]
+			}]
+		};
+		//定义一个点要素渲染器
+		pointRenderer = {
+			type: "simple", // autocasts as new SimpleRenderer()
+			symbol: {
+				type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+				size: 7.5,
+				color: "#FFFF00",
+				outline: null
+			}
+		};
+		//定义一个geojsonlayer
+		var CUG_F_geoJSONLayer = new GeoJSONLayer({
+			url: "https://524394292.github.io/mxy/mapCUG-F.geojson",
+			
+			popupTemplate: template_2,
+		});
+		var CUG_P_geoJSONLayer = new GeoJSONLayer({
+			url: "https://524394292.github.io/mxy/mapCUG-P.geojson",
+			renderer: pointRenderer,
+			popupTemplate: template,
+		});
+		map.add(CUG_F_geoJSONLayer);
+		map.add(CUG_P_geoJSONLayer);
+
+		//定义一个搜索控件（面）
+		searchWidget = new Search({
+			view: view,
+			sources: [{
+				layer: CUG_F_geoJSONLayer,
+				searchFields: ["name"],
+				displayField: "name",
+				outFields: ["name"],
+				name: "中国地质大学面要素",
+				placeholder: "请输入查询面要素",
+			}]
+		});
+		//定义一个搜索控件（点）
+		searchWidget_2 = new Search({
+			view: view,
+			includeDefaultSources:false,
+			sources: [{
+				layer: CUG_P_geoJSONLayer,
+				searchFields: ["name"],
+				displayField: "name",
+				outFields: ["name"],
+				name: "中国地质大学点要素",
+				placeholder: "请输入查询点要素"
+			}]
+		});
+		
+		view.ui.add(searchWidget, {
+			position: "top-right"
+		});
+		view.ui.add(searchWidget_2, {
+			position: "top-right"
+		});
+		
+		//定义地图控件
+		var coordsWidget = document.createElement("div");
+		coordsWidget.id = "coordsWidget";
+		coordsWidget.className = "esri-widget esri-component";
+		coordsWidget.style.padding = "10px 10px 10px";
+		view.ui.add(coordsWidget, "bottom-right");
+
+		function showCoordinates(pt) {
+			var coords = "经纬度坐标：" + pt.longitude.toFixed(3)+ " , " + pt.latitude.toFixed(3) +"  "+
+				" | 比例尺为 1:" + Math.round(view.scale * 1) / 1 +"  "+
+				" | 显示级数： " + view.zoom;
+			coordsWidget.innerHTML = coords;
+		}
+		//添加事件和监视处理程序
+		view.watch("stationary", function(isStationary) {
+			showCoordinates(view.center);
+		});
+		view.on("pointer-move", function(evt) {
+			showCoordinates(view.toMap({
+				x: evt.x,
+				y: evt.y
+			}));
+		});
+    });
+    </script>
+</html>
